@@ -8,6 +8,10 @@ mod dimension;
 mod block;
 #[cfg(feature = "flexbox")]
 mod flex;
+
+#[cfg(feature = "wasm")]
+use wasm_bindgen::prelude::*;
+
 #[cfg(feature = "grid")]
 mod grid;
 
@@ -134,20 +138,23 @@ pub trait CoreStyle {
 /// Sets the layout used for the children of this node
 ///
 /// The default values depends on on which feature flags are enabled. The order of precedence is: Flex, Grid, Block, None.
+/// [`Display::Flex`] is the default value.
+#[repr(u8)]
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub enum Display {
     /// The children will follow the block layout algorithm
     #[cfg(feature = "block_layout")]
     Block,
+    /// The children will not be laid out, and will follow absolute positioning
+    None,
     /// The children will follow the flexbox layout algorithm
     #[cfg(feature = "flexbox")]
     Flex,
     /// The children will follow the CSS Grid layout algorithm
     #[cfg(feature = "grid")]
     Grid,
-    /// The node is hidden, and it's children will also be hidden
-    None,
 }
 
 impl Display {
@@ -210,6 +217,18 @@ impl Default for BoxGenerationMode {
     }
 }
 
+impl TryFrom<i32> for Display {
+    type Error = ();
+    fn try_from(n: i32) -> Result<Self, ()> {
+        match n {
+            0 => Ok(Display::None),
+            1 => Ok(Display::Flex),
+            2 => Ok(Display::Grid),
+            _ => Err(()),
+        }
+    }
+}
+
 /// The positioning strategy for this item.
 ///
 /// This controls both how the origin is determined for the [`Style::position`] field,
@@ -219,8 +238,10 @@ impl Default for BoxGenerationMode {
 /// which can be unintuitive.
 ///
 /// [`Position::Relative`] is the default value, in contrast to the default behavior in CSS.
+#[repr(u8)]
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub enum Position {
     /// The offset is computed relative to the final position given by the layout algorithm.
     /// Offsets do not affect the position of any other items; they are effectively a correction factor applied at the end.
@@ -231,6 +252,17 @@ pub enum Position {
     ///
     /// WARNING: to opt-out of layouting entirely, you must use [`Display::None`] instead on your [`Style`] object.
     Absolute,
+}
+
+impl TryFrom<i32> for Position {
+    type Error = ();
+    fn try_from(n: i32) -> Result<Self, ()> {
+        match n {
+            0 => Ok(Position::Relative),
+            1 => Ok(Position::Absolute),
+            _ => Err(()),
+        }
+    }
 }
 
 impl Default for Position {
@@ -299,6 +331,20 @@ pub enum Overflow {
     Scroll,
 }
 
+
+impl TryFrom<i32> for Overflow {
+    type Error = ();
+    fn try_from(n: i32) -> Result<Self, ()> {
+        match n {
+            0 => Ok(Overflow::Visible),
+            1 => Ok(Overflow::Clip),
+            2 => Ok(Overflow::Hidden),
+            3 => Ok(Overflow::Scroll),
+            _ => Err(()),
+        }
+    }
+}
+
 impl Overflow {
     /// Returns true for overflow modes that contain their contents (`Overflow::Hidden`, `Overflow::Scroll`, `Overflow::Auto`)
     /// or else false for overflow modes that allow their contains to spill (`Overflow::Visible`).
@@ -317,11 +363,13 @@ impl Overflow {
         match self.is_scroll_container() {
             true => Some(0.0),
             false => None,
-        }
+    }
     }
 }
 
+
 /// A typed representation of the CSS style information for a single node.
+/// The flexbox layout information for a single [`Node`](crate::node::Node).
 ///
 /// The most important idea in flexbox is the notion of a "main" and "cross" axis, which are always perpendicular to each other.
 /// The orientation of these axes are controlled via the [`FlexDirection`] field of this struct.

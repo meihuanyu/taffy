@@ -23,6 +23,9 @@ serde = { version = "1.0", default-features = false, optional = true, features =
 ] }
 slotmap = { version = "1.0.6", default-features = false, optional = true }
 grid = { version = "0.17.0", default-features = false, optional = true }
+num-traits = { version = "0.2", default-features = false }
+rand = { version = "0.8.5", optional = true }
+wasm-bindgen = { version = "0.2.84", optional = true }
 
 [package.metadata.docs.rs]
 # To test all the documentation related features, run:
@@ -71,9 +74,10 @@ taffy_tree = ["dep:slotmap"]
 #! ### Other
 
 ## Add [`serde`] derives to Style structs
+wasm = ["dep:wasm-bindgen"]
 serde = ["dep:serde"]
 ## Allow Taffy to depend on the [`Rust Standard Library`](std)
-std = ["grid?/std", "serde?/std", "slotmap?/std"]
+std = ["grid?/std", "serde?/std", "slotmap?/std", "num-traits/std"]
 ## Allow Taffy to depend on the alloc library
 alloc = ["serde?/alloc"]
 ## Internal feature for debugging

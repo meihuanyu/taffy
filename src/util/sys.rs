@@ -2,15 +2,15 @@
 
 // When std is enabled, prefer those types
 #[cfg(feature = "std")]
-pub(crate) use self::std::*;
+pub use self::std::*;
 
 // When alloc but not std is enabled, use those types
 #[cfg(all(feature = "alloc", not(feature = "std")))]
-pub(crate) use self::alloc::*;
+pub use self::alloc::*;
 
 // When neither alloc or std is enabled, use a heapless fallback
 #[cfg(all(not(feature = "alloc"), not(feature = "std")))]
-pub(crate) use self::core::*;
+pub use self::core::*;
 
 /// For when `std` is enabled
 #[cfg(feature = "std")]
@@ -21,7 +21,7 @@ mod std {
     pub(crate) type ChildrenVec<A> = std::vec::Vec<A>;
     #[cfg(feature = "grid")]
     /// A vector of grid tracks
-    pub(crate) type GridTrackVec<A> = std::vec::Vec<A>;
+    pub type GridTrackVec<A> = std::vec::Vec<A>;
 
     /// Creates a new vector with the capacity for the specified number of items before it must be resized
     #[must_use]
@@ -82,7 +82,7 @@ mod alloc {
     pub(crate) type ChildrenVec<A> = alloc::vec::Vec<A>;
     #[cfg(feature = "grid")]
     /// A vector of grid tracks
-    pub(crate) type GridTrackVec<A> = alloc::vec::Vec<A>;
+    pub type GridTrackVec<A> = alloc::vec::Vec<A>;
 
     /// Creates a new vector with the capacity for the specified number of items before it must be resized
     #[must_use]
@@ -134,7 +134,7 @@ mod core {
     pub(crate) type ChildrenVec<A> = arrayvec::ArrayVec<A, MAX_CHILD_COUNT>;
     #[cfg(feature = "grid")]
     /// A vector of grid tracks
-    pub(crate) type GridTrackVec<A> = arrayvec::ArrayVec<A, MAX_GRID_TRACKS>;
+    pub type GridTrackVec<A> = arrayvec::ArrayVec<A, MAX_GRID_TRACKS>;
 
     /// Creates a new map with the capacity for the specified number of items before it must be resized
     ///

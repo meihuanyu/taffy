@@ -1,0 +1,48 @@
+[
+  {
+    "name": "基础三行三列Grid",
+    "json": {
+      "display": "grid",
+      "width": { "val": 400, "unit": "px" },
+      "height": { "val": 200, "unit": "px" },
+      "gridTemplateRows": ["60px", "1fr", "auto"],
+      "gridTemplateColumns": ["100px", "1fr", "min-content"],
+      "children": [
+        { "gridRow": [1, 2], "gridColumn": [1, 3], "label": "A", "width": { "val": 100, "unit": "px" }, "height": { "val": 60, "unit": "px" } },
+        { "gridRow": [2, 3], "gridColumn": [2, 4], "label": "B", "width": { "val": 80, "unit": "px" }, "height": { "val": 60, "unit": "px" } },
+        { "gridRow": [3, 4], "gridColumn": [1, 2], "label": "C", "width": { "val": 70, "unit": "px" }, "height": { "val": 40, "unit": "px" } }
+      ]
+    }
+  },
+  {
+    "name": "自动流Grid",
+    "json": {
+      "display": "grid",
+      "width": { "val": 400, "unit": "px" },
+      "height": { "val": 200, "unit": "px" },
+      "gridAutoFlow": "row",
+      "gridTemplateRows": ["80px", "1fr"],
+      "gridTemplateColumns": ["1fr", "2fr"],
+      "children": [
+        { "label": "A", "width": { "val": 60, "unit": "px" }, "height": { "val": 80, "unit": "px" } },
+        { "label": "B", "width": { "val": 80, "unit": "px" }, "height": { "val": 80, "unit": "px" } },
+        { "label": "C", "width": { "val": 100, "unit": "px" }, "height": { "val": 80, "unit": "px" } }
+      ]
+    }
+  },
+  {
+    "name": "Grid 跨行跨列",
+    "json": {
+      "display": "grid",
+      "width": { "val": 400, "unit": "px" },
+      "height": { "val": 200, "unit": "px" },
+      "gridTemplateRows": ["1fr", "1fr"],
+      "gridTemplateColumns": ["1fr", "1fr"],
+      "children": [
+        { "gridRowSpan": 2, "gridColumn": [1, 2], "label": "A", "width": { "val": 80, "unit": "px" }, "height": { "val": 80, "unit": "px" } },
+        { "gridRow": [1, 2], "gridColumn": [2, 3], "label": "B", "width": { "val": 80, "unit": "px" }, "height": { "val": 80, "unit": "px" } },
+        { "gridRow": [2, 3], "gridColumn": [2, 3], "label": "C", "width": { "val": 80, "unit": "px" }, "height": { "val": 80, "unit": "px" } }
+      ]
+    }
+  }
+] 

@@ -31,7 +31,8 @@ pub(crate) mod block;
 pub(crate) mod flexbox;
 
 #[cfg(feature = "grid")]
-pub(crate) mod grid;
+pub mod grid;
+
 
 pub use leaf::compute_leaf_layout;
 

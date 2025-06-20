@@ -33,7 +33,7 @@ mod explicit_grid;
 mod implicit_grid;
 mod placement;
 mod track_sizing;
-mod types;
+pub mod types;
 mod util;
 
 /// Grid layout algorithm

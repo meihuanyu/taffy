@@ -23,6 +23,14 @@ use taffy::prelude::*;
 use taffy::TraversePartialTree;
 use wasm_bindgen::prelude::*;
 
+// Grid-specific imports - use public paths
+use taffy::{
+    GridAutoFlow, GridPlacement, GridTrackRepetition, 
+    MaxTrackSizingFunction, MinTrackSizingFunction, NonRepeatedTrackSizingFunction, TrackSizingFunction
+};
+use taffy::compute::grid::types::GridLine;
+use taffy::util::sys::GridTrackVec;
+
 /// Get the value of a property named "key" from the JsValue "obj"
 fn get_key(obj: &JsValue, key: &str) -> Option<JsValue> {
     Reflect::get(obj, &key.into()).ok()
@@ -588,6 +596,275 @@ impl Node {
     // Grid
     pub fn setGridAutoFlow(&mut self, value: GridAutoFlow) -> Result<(), JsError> {
         with_style_mut!(self, style, style.grid_auto_flow = value)
+    }
+
+    // Grid Template Rows/Columns
+    pub fn setGridTemplateRows(&mut self, tracks: &JsValue) -> Result<(), JsError> {
+        with_style_mut!(self, style, {
+            style.grid_template_rows = parse_grid_tracks(tracks)?;
+        })
+    }
+
+    pub fn setGridTemplateColumns(&mut self, tracks: &JsValue) -> Result<(), JsError> {
+        with_style_mut!(self, style, {
+            style.grid_template_columns = parse_grid_tracks(tracks)?;
+        })
+    }
+
+    // Grid Auto Rows/Columns
+    pub fn setGridAutoRows(&mut self, tracks: &JsValue) -> Result<(), JsError> {
+        with_style_mut!(self, style, {
+            style.grid_auto_rows = parse_auto_grid_tracks(tracks)?;
+        })
+    }
+
+    pub fn setGridAutoColumns(&mut self, tracks: &JsValue) -> Result<(), JsError> {
+        with_style_mut!(self, style, {
+            style.grid_auto_columns = parse_auto_grid_tracks(tracks)?;
+        })
+    }
+
+    // Grid Item Placement
+    pub fn setGridRow(&mut self, start: i16, end: i16) -> Result<(), JsError> {
+        with_style_mut!(self, style, {
+            style.grid_row.start = if start == 0 { GridPlacement::Auto } else { GridPlacement::Line(GridLine::from(start)) };
+            style.grid_row.end = if end == 0 { GridPlacement::Auto } else { GridPlacement::Line(GridLine::from(end)) };
+        })
+    }
+
+    pub fn setGridColumn(&mut self, start: i16, end: i16) -> Result<(), JsError> {
+        with_style_mut!(self, style, {
+            style.grid_column.start = if start == 0 { GridPlacement::Auto } else { GridPlacement::Line(GridLine::from(start)) };
+            style.grid_column.end = if end == 0 { GridPlacement::Auto } else { GridPlacement::Line(GridLine::from(end)) };
+        })
+    }
+
+    pub fn setGridRowSpan(&mut self, span: u16) -> Result<(), JsError> {
+        with_style_mut!(self, style, {
+            style.grid_row.start = GridPlacement::Span(span);
+            style.grid_row.end = GridPlacement::Auto;
+        })
+    }
+
+    pub fn setGridColumnSpan(&mut self, span: u16) -> Result<(), JsError> {
+        with_style_mut!(self, style, {
+            style.grid_column.start = GridPlacement::Span(span);
+            style.grid_column.end = GridPlacement::Auto;
+        })
+    }
+
+    // Grid Item Placement with Auto
+    pub fn setGridRowAuto(&mut self) -> Result<(), JsError> {
+        with_style_mut!(self, style, {
+            style.grid_row.start = GridPlacement::Auto;
+            style.grid_row.end = GridPlacement::Auto;
+        })
+    }
+
+    pub fn setGridColumnAuto(&mut self) -> Result<(), JsError> {
+        with_style_mut!(self, style, {
+            style.grid_column.start = GridPlacement::Auto;
+            style.grid_column.end = GridPlacement::Auto;
+        })
+    }
+}
+
+// Helper functions for parsing grid tracks
+fn parse_grid_tracks(tracks: &JsValue) -> Result<GridTrackVec<TrackSizingFunction>, JsError> {
+    if let Some(array) = tracks.dyn_ref::<js_sys::Array>() {
+        let mut track_vec = GridTrackVec::new();
+        for i in 0..array.length() {
+            let track = array.get(i);
+            let track_func = parse_track_sizing_function(&track)?;
+            track_vec.push(track_func);
+        }
+        Ok(track_vec)
+    } else {
+        Err(JsError::new("Expected array for grid tracks"))
+    }
+}
+
+fn parse_auto_grid_tracks(tracks: &JsValue) -> Result<GridTrackVec<NonRepeatedTrackSizingFunction>, JsError> {
+    if let Some(array) = tracks.dyn_ref::<js_sys::Array>() {
+        let mut track_vec = GridTrackVec::new();
+        for i in 0..array.length() {
+            let track = array.get(i);
+            let track_func = parse_non_repeated_track_sizing_function(&track)?;
+            track_vec.push(track_func);
+        }
+        Ok(track_vec)
+    } else {
+        Err(JsError::new("Expected array for grid auto tracks"))
+    }
+}
+
+fn parse_track_sizing_function(track: &JsValue) -> Result<TrackSizingFunction, JsError> {
+    if let Some(string) = track.as_string() {
+        // Handle string-based track definitions like "1fr", "100px", etc.
+        return parse_track_string(&string);
+    }
+    
+    if let Some(obj) = track.dyn_ref::<js_sys::Object>() {
+        // Handle object-based track definitions
+        if let Some(repeat) = get_key(obj, "repeat") {
+            return parse_repeat_track(repeat);
+        }
+        
+        // Single track
+        let track_func = parse_non_repeated_track_sizing_function(track)?;
+        Ok(TrackSizingFunction::Single(track_func))
+    } else {
+        Err(JsError::new("Invalid track sizing function"))
+    }
+}
+
+fn parse_track_string(track_str: &str) -> Result<TrackSizingFunction, JsError> {
+    let track_func = parse_non_repeated_track_sizing_function_from_string(track_str)?;
+    Ok(TrackSizingFunction::Single(track_func))
+}
+
+fn parse_repeat_track(repeat: JsValue) -> Result<TrackSizingFunction, JsError> {
+    if let Some(obj) = repeat.dyn_ref::<js_sys::Object>() {
+        let count = get_key(obj, "count").and_then(|v| v.as_f64()).unwrap_or(1.0) as u16;
+        let tracks = get_key(obj, "tracks").ok_or_else(|| JsError::new("Missing tracks in repeat"))?;
+        
+        if let Some(array) = tracks.dyn_ref::<js_sys::Array>() {
+            let mut track_vec = GridTrackVec::new();
+            for i in 0..array.length() {
+                let track = array.get(i);
+                let track_func = parse_non_repeated_track_sizing_function(&track)?;
+                track_vec.push(track_func);
+            }
+            
+            let repetition = GridTrackRepetition::Count(count);
+            Ok(TrackSizingFunction::Repeat(repetition, track_vec))
+        } else {
+            Err(JsError::new("Expected array for repeat tracks"))
+        }
+    } else {
+        Err(JsError::new("Invalid repeat object"))
+    }
+}
+
+fn parse_non_repeated_track_sizing_function(track: &JsValue) -> Result<NonRepeatedTrackSizingFunction, JsError> {
+    if let Some(string) = track.as_string() {
+        return parse_non_repeated_track_sizing_function_from_string(&string);
+    }
+    
+    if let Some(obj) = track.dyn_ref::<js_sys::Object>() {
+        let min = if let Some(min_val) = get_key(obj, "min") {
+            parse_min_track_sizing_function(&min_val)?
+        } else {
+            MinTrackSizingFunction::AUTO
+        };
+        
+        let max = if let Some(max_val) = get_key(obj, "max") {
+            parse_max_track_sizing_function(&max_val)?
+        } else {
+            MaxTrackSizingFunction::AUTO
+        };
+        
+        Ok(NonRepeatedTrackSizingFunction { min, max })
+    } else {
+        Err(JsError::new("Invalid non-repeated track sizing function"))
+    }
+}
+
+fn parse_non_repeated_track_sizing_function_from_string(track_str: &str) -> Result<NonRepeatedTrackSizingFunction, JsError> {
+    let track_str = track_str.trim();
+    
+    match track_str {
+        "auto" => Ok(NonRepeatedTrackSizingFunction::AUTO),
+        "min-content" => Ok(NonRepeatedTrackSizingFunction::MIN_CONTENT),
+        "max-content" => Ok(NonRepeatedTrackSizingFunction::MAX_CONTENT),
+        s if s.ends_with("fr") => {
+            let val = s.trim_end_matches("fr").parse::<f32>()
+                .map_err(|_| JsError::new("Invalid fr value"))?;
+            Ok(NonRepeatedTrackSizingFunction::from_fr(val))
+        }
+        s if s.ends_with("%") => {
+            let val = s.trim_end_matches("%").parse::<f32>()
+                .map_err(|_| JsError::new("Invalid percentage value"))?;
+            Ok(NonRepeatedTrackSizingFunction::from_percent(val))
+        }
+        s if s.ends_with("px") => {
+            let val = s.trim_end_matches("px").parse::<f32>()
+                .map_err(|_| JsError::new("Invalid pixel value"))?;
+            Ok(NonRepeatedTrackSizingFunction::from_length(val))
+        }
+        s => {
+            // Try parsing as a number (assume pixels)
+            let val = s.parse::<f32>()
+                .map_err(|_| JsError::new("Invalid track value"))?;
+            Ok(NonRepeatedTrackSizingFunction::from_length(val))
+        }
+    }
+}
+
+fn parse_min_track_sizing_function(track: &JsValue) -> Result<MinTrackSizingFunction, JsError> {
+    if let Some(string) = track.as_string() {
+        let track_str = string.trim();
+        match track_str {
+            "auto" => Ok(MinTrackSizingFunction::AUTO),
+            "min-content" => Ok(MinTrackSizingFunction::MIN_CONTENT),
+            "max-content" => Ok(MinTrackSizingFunction::MAX_CONTENT),
+            s if s.ends_with("fr") => {
+                let val = s.trim_end_matches("fr").parse::<f32>()
+                    .map_err(|_| JsError::new("Invalid fr value"))?;
+                // MinTrackSizingFunction doesn't have from_fr, use auto for min and fr for max
+                Ok(MinTrackSizingFunction::AUTO)
+            }
+            s if s.ends_with("%") => {
+                let val = s.trim_end_matches("%").parse::<f32>()
+                    .map_err(|_| JsError::new("Invalid percentage value"))?;
+                Ok(MinTrackSizingFunction::from_percent(val))
+            }
+            s if s.ends_with("px") => {
+                let val = s.trim_end_matches("px").parse::<f32>()
+                    .map_err(|_| JsError::new("Invalid pixel value"))?;
+                Ok(MinTrackSizingFunction::from_length(val))
+            }
+            s => {
+                let val = s.parse::<f32>()
+                    .map_err(|_| JsError::new("Invalid track value"))?;
+                Ok(MinTrackSizingFunction::from_length(val))
+            }
+        }
+    } else {
+        Err(JsError::new("Expected string for min track sizing function"))
+    }
+}
+
+fn parse_max_track_sizing_function(track: &JsValue) -> Result<MaxTrackSizingFunction, JsError> {
+    if let Some(string) = track.as_string() {
+        let track_str = string.trim();
+        match track_str {
+            "auto" => Ok(MaxTrackSizingFunction::AUTO),
+            "min-content" => Ok(MaxTrackSizingFunction::MIN_CONTENT),
+            "max-content" => Ok(MaxTrackSizingFunction::MAX_CONTENT),
+            s if s.ends_with("fr") => {
+                let val = s.trim_end_matches("fr").parse::<f32>()
+                    .map_err(|_| JsError::new("Invalid fr value"))?;
+                Ok(MaxTrackSizingFunction::fr(val))
+            }
+            s if s.ends_with("%") => {
+                let val = s.trim_end_matches("%").parse::<f32>()
+                    .map_err(|_| JsError::new("Invalid percentage value"))?;
+                Ok(MaxTrackSizingFunction::from_percent(val))
+            }
+            s if s.ends_with("px") => {
+                let val = s.trim_end_matches("px").parse::<f32>()
+                    .map_err(|_| JsError::new("Invalid pixel value"))?;
+                Ok(MaxTrackSizingFunction::from_length(val))
+            }
+            s => {
+                let val = s.parse::<f32>()
+                    .map_err(|_| JsError::new("Invalid track value"))?;
+                Ok(MaxTrackSizingFunction::from_length(val))
+            }
+        }
+    } else {
+        Err(JsError::new("Expected string for max track sizing function"))
     }
 }
 

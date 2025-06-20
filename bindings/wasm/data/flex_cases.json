@@ -1,0 +1,67 @@
+[
+  {
+    "name": "基础横向flex",
+    "json": {
+      "display": "flex",
+      "width": { "val": 400, "unit": "px" },
+      "height": { "val": 120, "unit": "px" },
+      "flexDirection": "row",
+      "alignItems": "center",
+      "children": [
+        {
+          "width": { "val": 80, "unit": "px" },
+          "height": { "val": 60, "unit": "px" },
+          "label": "A"
+        },
+        {
+          "flexGrow": 1,
+          "height": { "val": 60, "unit": "px" },
+          "label": "B"
+        },
+        {
+          "width": { "val": 60, "unit": "px" },
+          "height": { "val": 60, "unit": "px" },
+          "label": "C"
+        }
+      ]
+    }
+  },
+  {
+    "name": "wrap 换行flex",
+    "json": {
+      "display": "flex",
+      "width": { "val": 300, "unit": "px" },
+      "height": { "val": 120, "unit": "px" },
+      "flexWrap": "wrap",
+      "children": [
+        { "width": { "val": 120, "unit": "px" }, "height": { "val": 40, "unit": "px" }, "label": "A" },
+        { "width": { "val": 120, "unit": "px" }, "height": { "val": 40, "unit": "px" }, "label": "B" },
+        { "width": { "val": 120, "unit": "px" }, "height": { "val": 40, "unit": "px" }, "label": "C" }
+      ]
+    }
+  },
+  {
+    "name": "嵌套flex",
+    "json": {
+      "display": "flex",
+      "width": { "val": 400, "unit": "px" },
+      "height": { "val": 120, "unit": "px" },
+      "children": [
+        {
+          "display": "flex",
+          "flexDirection": "column",
+          "flexGrow": 1,
+          "children": [
+            { "height": { "val": 40, "unit": "px" }, "label": "A1" },
+            { "height": { "val": 40, "unit": "px" }, "label": "A2" }
+          ]
+        },
+        {
+          "width": { "val": 80, "unit": "px" },
+          "height": { "val": 80, "unit": "px" },
+          "label": "B"
+        }
+      ]
+    }
+  }
+] 

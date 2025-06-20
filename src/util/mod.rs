@@ -1,7 +1,7 @@
 //! Helpful misc. utilities such as a function to debug print a tree
 mod math;
 mod resolve;
-pub(crate) mod sys;
+pub mod sys;
 
 pub use math::MaybeMath;
 pub use resolve::{MaybeResolve, ResolveOrZero};

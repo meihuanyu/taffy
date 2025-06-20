@@ -11,6 +11,27 @@
       font-family: sans-serif;
     }
 
+    .case-row {
+      display: flex;
+      gap: 32px;
+      margin-bottom: 32px;
+      align-items: flex-start;
+    }
+
+    .case-col {
+      flex: 1;
+      padding: 8px;
+      border: 1px solid #eee;
+      border-radius: 8px;
+      background: #fafbfc;
+      min-width: 0;
+    }
+
+    .case-title {
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+
     .column {
       flex: 1;
       padding: 16px;
@@ -98,271 +119,66 @@
 
 <body>
   <div class="column">
-    <div class="demo-title">Taffy WASM 布局结果</div>
-    <div class="flex-demo">
-      <div>Flex 布局：</div>
-      <div id="taffy-flex-bbox-view" style="position: relative; width: 400px; height: 120px; margin-bottom: 16px;">
-      </div>
-    </div>
-    <div class="grid-demo">
-      <div>Grid 布局：</div>
-      <div id="taffy-grid-bbox-view" style="position: relative; width: 400px; height: 120px;"></div>
-    </div>
-  </div>
-  <div class="column">
-    <div class="demo-title">原生 HTML/CSS 效果</div>
-    <div>
-      <div>Flex 布局：</div>
-      <div id="native-flex-root"></div>
-    </div>
-    <div>
-      <div>Grid 布局：</div>
-      <div id="native-grid-root"></div>
-    </div>
+    <div class="demo-title">Flex 用例对比</div>
+    <div id="flex-cases-list"></div>
+    <div class="demo-title">Grid 用例对比</div>
+    <div id="grid-cases-list"></div>
   </div>
   <script type="module">
     import init, * as Taffy from './pkg/taffy_layout.js';
     await init();
+    import { buildTaffyFromJson, buildHtmlFromJson, renderBboxes, loadJsonList } from './utils.js';
 
-    // 公共 bbox 渲染函数
-    function renderBboxes(rootLayout, container, colorList, depth = 0) {
-      const color = colorList[depth % colorList.length] || '#888';
-      const div = document.createElement('div');
-      div.style.position = 'absolute';
-      div.style.left = rootLayout.x + 'px';
-      div.style.top = rootLayout.y + 'px';
-      div.style.width = rootLayout.width + 'px';
-      div.style.height = rootLayout.height + 'px';
-      div.style.border = `2px dashed ${color}`;
-      div.style.boxSizing = 'border-box';
-      div.style.background = color + '11';
-      div.style.borderRadius = '8px';
-      div.style.pointerEvents = 'auto';
-      // label
-      const label = document.createElement('div');
-      label.className = 'bbox-label';
-      div.appendChild(label);
-      // tooltip
-      container.appendChild(div);
-      for (let i = 0; i < (rootLayout.childCount || 0); i++) {
-        const child = rootLayout.child(i);
-        child.label = rootLayout.child && rootLayout.child(i).label;
-        renderBboxes(child, container, colorList, depth + 1);
-      }
-    }
+    const flexCases = await loadJsonList('./data/flex_cases.json');
+    const gridCases = await loadJsonList('./data/grid_cases.json');
 
-    // 公用 JSON 数据
-    const flex1json = {
-      width: { val: 200, unit: 'px' },
-      height: { val: 0, unit: 'fitContent' },
-      flexWrap: 'wrap',
-      flexDirection: 'row',
-      display: 'flex',
-      alignItems: 'center',
-      children: [
-        {
-          width: { val: 0, unit: 'fitContent' },
-          height: { val: 0, unit: 'fitContent' },
-          children: [
-            {
-              width: { val: 40, unit: 'px' },
-              height: { val: 35, unit: 'px' },
-            },
-          ],
-        },
-        {
-          height: { val: 32, unit: 'px' },
-          flexGrow: 1,
-        },
-        {
-          width: { val: 50, unit: 'px' },
-          height: { val: 32, unit: 'px' },
-        },
-      ],
-    }
-
-    const flex2json = {
-      display: 'flex',
-      width: { val: 500, unit: 'px' },
-      padding: { val: 10, unit: 'px' },
-      children: [
-        {
-          name: 'd1',
-          width: { val: 100, unit: 'px' },
-          height: { val: 200, unit: 'px' },
-        },
-        {
-          name: 'd2',
-          flexGrow: 1,
-        },
-      ],
-    }
-
-    // Taffy 渲染
-    function buildTaffyFromJson(json, tree) {
-      const node = new Taffy.Node(tree);
-
-      // 尺寸
-      if (json.width) {
-        if (json.width.unit === 'px') node.setWidth(json.width.val, Taffy.StyleUnit.Px);
-        else if (json.width.unit === '%') node.setWidth(json.width.val, Taffy.StyleUnit.Percent);
-        else if (json.width.unit === 'auto') node.setWidth(0, Taffy.StyleUnit.Auto);
-        // 其他单位可扩展
-      }
-      if (json.height) {
-        if (json.height.unit === 'px') node.setHeight(json.height.val, Taffy.StyleUnit.Px);
-        else if (json.height.unit === '%') node.setHeight(json.height.val, Taffy.StyleUnit.Percent);
-        else if (json.height.unit === 'auto') node.setHeight(0, Taffy.StyleUnit.Auto);
-      }
-      // min/max
-      if (json.minWidth) node.setMinWidth(json.minWidth.val, Taffy.StyleUnit[json.minWidth.unit === 'px' ? 'Px' : 'Percent']);
-      if (json.maxWidth) node.setMaxWidth(json.maxWidth.val, Taffy.StyleUnit[json.maxWidth.unit === 'px' ? 'Px' : 'Percent']);
-      if (json.minHeight) node.setMinHeight(json.minHeight.val, Taffy.StyleUnit[json.minHeight.unit === 'px' ? 'Px' : 'Percent']);
-      if (json.maxHeight) node.setMaxHeight(json.maxHeight.val, Taffy.StyleUnit[json.maxHeight.unit === 'px' ? 'Px' : 'Percent']);
-
-      // margin/padding
-      if (json.margin) node.setMarginAll(json.margin.val, Taffy.StyleUnit.Px);
-      if (json.padding) node.setPaddingAll(json.padding.val, Taffy.StyleUnit.Px);
-
-      // gap
-      if (json.gap) node.setGap(json.gap.val, Taffy.StyleUnit.Px);
-      if (json.rowGap) node.setRowGap(json.rowGap.val, Taffy.StyleUnit.Px);
-      if (json.columnGap) node.setColumnGap(json.columnGap.val, Taffy.StyleUnit.Px);
-
-      // flex
-      if (json.flexGrow !== undefined) node.setFlexGrow(json.flexGrow);
-      if (json.flexShrink !== undefined) node.setFlexShrink(json.flexShrink);
-      if (json.flexBasis) node.setFlexBasis(json.flexBasis.val, Taffy.StyleUnit[json.flexBasis.unit === 'px' ? 'Px' : 'Percent']);
-      if (json.flexWrap) node.setFlexWrap(Taffy.FlexWrap[json.flexWrap.charAt(0).toUpperCase() + json.flexWrap.slice(1)]);
-      if (json.flexDirection) node.setFlexDirection(Taffy.FlexDirection[json.flexDirection.charAt(0).toUpperCase() + json.flexDirection.slice(1)]);
-
-      // display
-      if (json.display) node.setDisplay(Taffy.Display[json.display.charAt(0).toUpperCase() + json.display.slice(1)]);
-
-      // align/justify
-      if (json.alignItems) node.setAlignItems(Taffy.AlignItems[json.alignItems.charAt(0).toUpperCase() + json.alignItems.slice(1)]);
-      if (json.justifyContent) node.setJustifyContent(Taffy.AlignContent[json.justifyContent.charAt(0).toUpperCase() + json.justifyContent.slice(1)]);
-      if (json.alignContent) node.setAlignContent(Taffy.AlignContent[json.alignContent.charAt(0).toUpperCase() + json.alignContent.slice(1)]);
-
-      // grid
-      if (json.gridAutoFlow) node.setGridAutoFlow(Taffy.GridAutoFlow[json.gridAutoFlow.charAt(0).toUpperCase() + json.gridAutoFlow.slice(1)]);
-
-      // aspect ratio
-      if (json.aspectRatio !== undefined) node.setAspectRatio(json.aspectRatio);
-
-      // overflow
-      if (json.overflow) node.setOverflow(Taffy.Overflow[json.overflow.charAt(0).toUpperCase() + json.overflow.slice(1)]);
-
-      // 递归 children
-      (json.children || []).forEach(childJson => {
-        const child = buildTaffyFromJson(childJson, tree);
-        node.addChild(child);
+    function renderAllCases(type, cases, listId) {
+      const list = document.getElementById(listId);
+      list.innerHTML = '';
+      cases.forEach((item, idx) => {
+        const row = document.createElement('div');
+        row.className = 'case-row';
+        // 左侧 Taffy
+        const col1 = document.createElement('div');
+        col1.className = 'case-col';
+        const title = document.createElement('div');
+        title.className = 'case-title';
+        title.textContent = `${type === 'flex' ? 'Flex' : 'Grid'}用例${idx + 1}：${item.name}`;
+        col1.appendChild(title);
+        const bboxView = document.createElement('div');
+        bboxView.style.position = 'relative';
+        bboxView.style.width = (item.json.width && item.json.width.unit === 'px' ? item.json.width.val : 400) + 'px';
+        bboxView.style.height = (item.json.height && item.json.height.unit === 'px' ? item.json.height.val : 120) + 'px';
+        bboxView.style.marginBottom = '8px';
+        col1.appendChild(bboxView);
+        // Taffy 渲染
+        const tree = new Taffy.TaffyTree();
+        const root = buildTaffyFromJson(item.json, tree, Taffy);
+        const layout = root.computeLayout({
+          width: item.json.width && item.json.width.unit === 'px' ? item.json.width.val : undefined,
+          height: item.json.height && item.json.height.unit === 'px' ? item.json.height.val : undefined,
+        });
+        renderBboxes(layout, bboxView, ['#f00', '#0a0', '#00f']);
+        // 右侧 原生 HTML
+        const col2 = document.createElement('div');
+        col2.className = 'case-col';
+        const title2 = document.createElement('div');
+        title2.className = 'case-title';
+        title2.textContent = `${type === 'flex' ? 'Flex' : 'Grid'}用例${idx + 1}：${item.name}`;
+        col2.appendChild(title2);
+        const nativeView = buildHtmlFromJson(item.json);
+        nativeView.style.marginBottom = '8px';
+        col2.appendChild(nativeView);
+        // 合并
+        row.appendChild(col1);
+        row.appendChild(col2);
+        list.appendChild(row);
       });
-
-      return node;
     }
 
-    const buildDimension = (dimension) => {
-      if (!dimension) return;
-      if (dimension.unit === 'px') return dimension.val + 'px';
-      if (dimension.unit === '%') return dimension.val + '%';
-      if (dimension.unit === 'auto') return 'auto';
-      // 其他单位可扩展
-    }
-    // 原生 HTML/CSS 渲染
-    function buildHtmlFromJson(json, isRoot = true) {
-      const el = document.createElement('div');
-      el.className = 'native-box' + (isRoot ? ' root' : '');
+    renderAllCases('flex', flexCases, 'flex-cases-list');
+    renderAllCases('grid', gridCases, 'grid-cases-list');
 
-      // display
-      if (json.display) el.style.display = json.display;
-
-      // 尺寸
-      if (json.width) el.style.width = buildDimension(json.width);
-      if (json.height) el.style.height = buildDimension(json.height);
-
-      // min/max
-      if (json.minWidth) el.style.minWidth = buildDimension(json.minWidth);
-      if (json.maxWidth) el.style.maxWidth = buildDimension(json.maxWidth);
-      if (json.minHeight) el.style.minHeight = buildDimension(json.minHeight);
-      if (json.maxHeight) el.style.maxHeight = buildDimension(json.maxHeight);
-
-      // margin/padding
-      if (json.margin) el.style.margin = buildDimension(json.margin);
-      if (json.padding) el.style.padding = buildDimension(json.padding);
-
-      // gap
-      if (json.gap) el.style.gap = buildDimension(json.gap);
-      if (json.rowGap) el.style.rowGap = buildDimension(json.rowGap);
-      if (json.columnGap) el.style.columnGap = buildDimension(json.columnGap);
-
-      // flex
-      if (json.flexGrow !== undefined) el.style.flexGrow = json.flexGrow;
-      if (json.flexShrink !== undefined) el.style.flexShrink = json.flexShrink;
-      if (json.flexBasis) el.style.flexBasis = buildDimension(json.flexBasis);
-      if (json.flexWrap) el.style.flexWrap = json.flexWrap;
-      if (json.flexDirection) el.style.flexDirection = json.flexDirection;
-
-      // align/justify
-      if (json.alignItems) el.style.alignItems = json.alignItems;
-      if (json.justifyContent) el.style.justifyContent = json.justifyContent;
-      if (json.alignContent) el.style.alignContent = json.alignContent;
-
-      // grid
-      if (json.gridAutoFlow) el.style.gridAutoFlow = json.gridAutoFlow;
-
-      // aspect ratio
-      if (json.aspectRatio !== undefined) el.style.aspectRatio = json.aspectRatio;
-
-      // overflow
-      if (json.overflow) el.style.overflow = json.overflow;
-
-      // label
-      if (json.label) {
-        const labelDiv = document.createElement('div');
-        labelDiv.className = 'box-label';
-        labelDiv.innerText = json.label;
-        el.appendChild(labelDiv);
-      }
-
-      // tooltip
-      let tip = '';
-      if (json.label) tip += `label: ${json.label}\n`;
-      if (json.width) tip += `width: ${json.width.val}${json.width.unit}\n`;
-      if (json.height) tip += `height: ${json.height.val}${json.height.unit}\n`;
-      if (json.flexGrow !== undefined) tip += `flexGrow: ${json.flexGrow}\n`;
-      if (json.flexWrap) tip += `flexWrap: ${json.flexWrap}\n`;
-      if (json.flexDirection) tip += `flexDirection: ${json.flexDirection}\n`;
-      if (json.alignItems) tip += `alignItems: ${json.alignItems}\n`;
-      if (json.margin) tip += `margin: ${json.margin.val}${json.margin.unit}\n`;
-      el.title = tip.trim();
-
-      // 递归 children
-      (json.children || []).forEach(childJson => {
-        const child = buildHtmlFromJson(childJson, false);
-        el.appendChild(child);
-      });
-
-      return el;
-    }
-
-    // 渲染 Flex1json
-    const tree1 = new Taffy.TaffyTree();
-    const flexRoot = buildTaffyFromJson(flex2json, tree1);
-    const flexBboxView = document.getElementById('taffy-flex-bbox-view');
-    flexBboxView.innerHTML = '';
-    // 计算布局时需传递根宽高（如有）
-    const flexLayout = flexRoot.computeLayout({
-      width: flex1json.width && flex1json.width.unit === 'px' ? flex1json.width.val : undefined,
-      height: flex1json.height && flex1json.height.unit === 'px' ? flex1json.height.val : undefined,
-    });
-    renderBboxes(flexLayout, flexBboxView, ['#f00', '#0a0', '#00f']);
-    // HTML
-    const nativeFlexRoot = document.getElementById('native-flex-root');
-    nativeFlexRoot.innerHTML = '';
-    nativeFlexRoot.appendChild(buildHtmlFromJson(flex2json));
-
-    // gridJson、grid 渲染可类似扩展
   </script>
 </body>
 

@@ -265,6 +265,12 @@ impl Node {
         self.tree.taffy.borrow_mut().add_child(self.node, child.node).unwrap();
     }
 
+
+    #[wasm_bindgen(js_name = insertChildAtIndex)]
+    pub fn insert_child_at_index(&mut self, child: &Node, index: usize) {
+        self.tree.taffy.borrow_mut().insert_child_at_index(self.node, index, child.node).unwrap();
+    }
+
     #[wasm_bindgen(js_name = removeChild)]
     pub fn remove_child(&mut self, child: &Node) {
         self.tree.taffy.borrow_mut().remove_child(self.node, child.node).unwrap();

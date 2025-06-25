@@ -6,18 +6,26 @@ use taffy::prelude::*;
 fn main() -> Result<(), taffy::TaffyError> {
     let mut taffy: TaffyTree<()> = TaffyTree::new();
 
-    let child_style = Style { size: Size { width: length(20.0), height: length(20.0) }, ..Default::default() };
-    let child0 = taffy.new_leaf(child_style.clone())?;
-    let child1 = taffy.new_leaf(child_style.clone())?;
-    let child2 = taffy.new_leaf(child_style.clone())?;
+    let child0 = taffy.new_leaf_with_context(
+        Style {
+            size: Size { height: Dimension::AUTO, width: length(20.0) },
+            display: Display::Block,
+            ..Default::default()
+        },
+        (),
+    )?;
 
     let root = taffy.new_with_children(
-        Style { gap: Size { width: length(10.0), height: zero() }, ..Default::default() },
-        &[child0, child1, child2],
+        Style {
+            size: Size { width: length(50.0), height: length(60.0) },
+            display: Display::Flex,
+            ..Default::default()
+        },
+        &[child0],
     )?;
 
     // Compute layout and print result
-    taffy.compute_layout(root, Size::MAX_CONTENT)?;
+    taffy.compute_layout_with_measure(root, Size::MAX_CONTENT, |_, _, _, _, _| Size { width: 10.0, height: 10.0 });
     taffy.print_tree(root);
 
     Ok(())

@@ -317,6 +317,20 @@ impl Node {
             .unwrap();
         Layout::new(&self.tree, self.node)
     }
+
+    #[wasm_bindgen(js_name = resetStyle)]
+    pub fn reset_style(&mut self) -> Result<(), JsError> {
+        let mut taffy = self.tree.taffy.borrow_mut();
+        taffy.set_style(self.node, Style::DEFAULT)?;
+        Ok(())
+    }
+
+    #[wasm_bindgen(js_name = debugPrintStyle)]
+    pub fn debug_print_style(&self) -> Result<String, JsError> {
+        let taffy = self.tree.taffy.borrow();
+        let style = taffy.style(self.node)?;
+        Ok(format!("{:#?}", style))
+    }
 }
 
 macro_rules! get_style {

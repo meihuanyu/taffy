@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Simple Block Layout Example</title>
+    <style>
+        .native-box {
+            border: 1px solid #aaa;
+            margin: 8px;
+            padding: 8px;
+            background: #f9f9f9;
+        }
+
+        .native-box.root {
+            border: 2px solid #333;
+            background: #e0e0e0;
+        }
+
+        .box-label {
+            font-size: 12px;
+            color: #555;
+            margin-bottom: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="container"></div>
+    <script type="module">
+    import init, * as Taffy from './pkg/taffy_layout.js';
+    await init();
+        import { buildTaffyFromJson, renderBboxes } from './utils.js';
+
+        // 简单的 block 布局 JSON 数据
+        const data = {
+            label: "Root Block",
+            display: "flex",
+            width: { val: 400, unit: "px" },
+            height: { val: 200, unit: "px" },
+            children: [
+                {
+                    label: "Block 1",
+                    display: "block",
+                    width: { val: 100, unit: "px" },
+                    height: { val: 80, unit: "auto" },
+                    margin: { val: 8, unit: "px" }
+                }
+            ]
+        };
+
+        const bboxView = document.createElement('div');
+        bboxView.style.width = '500px'
+        bboxView.style.height = '500px'
+        document.body.appendChild(bboxView)
+        const tree = new Taffy.TaffyTree();
+        const root = new Taffy.Node(tree);
+
+        const flex = new Taffy.Node(tree);
+        flex.setDisplay(Taffy.Display.Flex);
+        flex.setWidth(500, Taffy.StyleUnit.Px);
+        flex.setHeight(300, Taffy.StyleUnit.Px);
+        flex.setAlignItems(Taffy.AlignItems.FlexStart);
+
+        const node = new Taffy.Node(tree);
+        node.setDisplay(Taffy.Display.Block);
+        node.setWidth(200, Taffy.StyleUnit.Px);
+        node.setHeight(0, Taffy.StyleUnit.Auto);
+        flex.addChild(node);
+        root.addChild(flex);
+        const layout = root.computeLayout({
+        width: undefined,
+        height: undefined,
+        });
+
+        renderBboxes(layout, bboxView, ['#f00', '#0a0', '#00f']);
+    </script>
+</body>
+
+</html>

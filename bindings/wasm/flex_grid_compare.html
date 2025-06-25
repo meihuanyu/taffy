@@ -132,6 +132,20 @@
     const flexCases = await loadJsonList('./data/flex_cases.json');
     const gridCases = await loadJsonList('./data/grid_cases.json');
 
+    const tree = new Taffy.TaffyTree();
+    const root = new Taffy.Node(tree)
+    const node = new Taffy.Node(tree)
+    node.setWidth(100, Taffy.StyleUnit.Px)
+    node.setHeight(50, Taffy.StyleUnit.Px)
+    root.addChild(node)
+    
+    const nodec1 = new Taffy.Node(tree)
+    nodec1.setWidth(0.5, Taffy.StyleUnit.Percent)
+    nodec1.setHeight(40, Taffy.StyleUnit.Px)
+    node.addChild(nodec1)
+    const layout = root.computeLayout({ width: 0, height: 0 })
+
+    console.log("layout", layout.child(0).child(0))
     function renderAllCases(type, cases, listId) {
       const list = document.getElementById(listId);
       list.innerHTML = '';

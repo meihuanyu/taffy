@@ -88,6 +88,7 @@ impl StyleUnit {
             StyleUnit::Px => Ok(Dimension::length(val)),
             StyleUnit::Percent => Ok(Dimension::percent(val)),
             StyleUnit::Auto => Ok(Dimension::auto()),
+            StyleUnit::MaxContent => Ok(Dimension::max_content()),
             _ => Err(()),
         }
     }

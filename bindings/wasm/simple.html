@@ -28,26 +28,9 @@
 <body>
     <div id="container"></div>
     <script type="module">
-    import init, * as Taffy from './pkg/taffy_layout.js';
-    await init();
+        import init, * as Taffy from './pkg/taffy_layout.js';
+        await init();
         import { buildTaffyFromJson, renderBboxes } from './utils.js';
-
-        // 简单的 block 布局 JSON 数据
-        const data = {
-            label: "Root Block",
-            display: "flex",
-            width: { val: 400, unit: "px" },
-            height: { val: 200, unit: "px" },
-            children: [
-                {
-                    label: "Block 1",
-                    display: "block",
-                    width: { val: 100, unit: "px" },
-                    height: { val: 80, unit: "auto" },
-                    margin: { val: 8, unit: "px" }
-                }
-            ]
-        };
 
         const bboxView = document.createElement('div');
         bboxView.style.width = '500px'
@@ -60,17 +43,20 @@
         flex.setDisplay(Taffy.Display.Flex);
         flex.setWidth(500, Taffy.StyleUnit.Px);
         flex.setHeight(300, Taffy.StyleUnit.Px);
-        flex.setAlignItems(Taffy.AlignItems.FlexStart);
+        flex.setAlignItems(Taffy.AlignItems.Center);
 
         const node = new Taffy.Node(tree);
         node.setDisplay(Taffy.Display.Block);
         node.setWidth(200, Taffy.StyleUnit.Px);
-        node.setHeight(0, Taffy.StyleUnit.Auto);
+        node.setHeight(0, Taffy.StyleUnit.MaxContent);
+        node.setMeasure((knownWidth, knownHeight, availableWidth, availableHeight) => {
+            return { width: 10, height: 20 }
+        });
         flex.addChild(node);
         root.addChild(flex);
         const layout = root.computeLayout({
-        width: undefined,
-        height: undefined,
+            width: undefined,
+            height: undefined,
         });
 
         renderBboxes(layout, bboxView, ['#f00', '#0a0', '#00f']);

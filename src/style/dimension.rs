@@ -90,6 +90,7 @@ impl TaffyZero for LengthPercentageAuto {
 impl TaffyAuto for LengthPercentageAuto {
     const AUTO: Self = Self(CompactLength::AUTO);
 }
+
 impl FromLength for LengthPercentageAuto {
     fn from_length<Input: Into<f32> + Copy>(value: Input) -> Self {
         Self::length(value.into())
@@ -127,6 +128,18 @@ impl LengthPercentageAuto {
     #[inline(always)]
     pub const fn auto() -> Self {
         Self(CompactLength::auto())
+    }
+
+    /// The dimension should be set to max-content
+    #[inline(always)]
+    pub const fn max_content() -> Self {
+        Self(CompactLength::max_content())
+    }
+
+    /// Returns true if value is LengthPercentageAuto::MaxContent
+    #[inline(always)]
+    pub fn is_max_content(self) -> bool {
+        self.0.is_max_content()
     }
 
     /// A `calc()` value. The value passed here is treated as an opaque handle to
@@ -225,6 +238,8 @@ impl From<LengthPercentageAuto> for Dimension {
 }
 
 impl Dimension {
+    /// Associated constant for max-content
+    pub const MAX_CONTENT: Self = Self::max_content();
     /// An absolute length in some abstract units. Users of Taffy may define what they correspond
     /// to in their application (pixels, logical pixels, mm, etc) as they see fit.
     #[inline(always)]
@@ -245,6 +260,18 @@ impl Dimension {
     #[inline(always)]
     pub const fn auto() -> Self {
         Self(CompactLength::auto())
+    }
+
+    /// The dimension should be set to max-content
+    #[inline(always)]
+    pub const fn max_content() -> Self {
+        Self(CompactLength::max_content())
+    }
+
+    /// Returns true if value is Dimension::MaxContent
+    #[inline(always)]
+    pub fn is_max_content(self) -> bool {
+        self.0.is_max_content()
     }
 
     /// A `calc()` value. The value passed here is treated as an opaque handle to

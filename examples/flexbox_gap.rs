@@ -8,7 +8,7 @@ fn main() -> Result<(), taffy::TaffyError> {
 
     let child0 = taffy.new_leaf_with_context(
         Style {
-            size: Size { height: Dimension::AUTO, width: length(20.0) },
+            size: Size { height: Dimension::MAX_CONTENT, width: length(20.0) },
             display: Display::Block,
             ..Default::default()
         },
@@ -19,6 +19,7 @@ fn main() -> Result<(), taffy::TaffyError> {
         Style {
             size: Size { width: length(50.0), height: length(60.0) },
             display: Display::Flex,
+            align_items: Some(AlignItems::Center),
             ..Default::default()
         },
         &[child0],
